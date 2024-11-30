@@ -1,6 +1,9 @@
 package view;
 
+import controller.AuthController;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
@@ -16,11 +19,15 @@ abstract public class AppShell {
 		clearMenus();
 		
 		if (SessionManager.isLoggedIn()) {
-//			if (SessionManager.getUser().getRole() != "User") {
-//				renderAdminMenu();
-//			} else {
-//				renderCustomerMenu();
-//			}
+			if (!SessionManager.getUser().getDepartment().getName().equals("HR Department")) {
+				if (!SessionManager.getUser().getPostion().equals("Department Head")) {
+					renderDepartmentMenu();
+				} else {
+					renderDepartmentHeadMenu();
+				}
+			} else {
+				renderHRMenu();
+			}
 		} else {
 			renderGuestMenu();
 		}
@@ -32,48 +39,16 @@ abstract public class AppShell {
 		return new Scene(rootLayout, 800, 600);
 	}
 	
-	private static void renderCustomerMenu() {
-		Menu navMenu = new Menu("Dashboard");
-		Menu logoutMenu = new Menu("Logout");
-		MenuItem logoutSubMenu = new MenuItem("Logout");
-		MenuItem homeSubMenu = new MenuItem("Home");
-		MenuItem cartSubMenu = new MenuItem("Cart");
-		
-		logoutSubMenu.setOnAction(e->{
-			//do something, use loginController
-		});
-		
-		if (RouteManager.getCurrentRoute().equals("home")) {
-			homeSubMenu.setStyle("-fx-font-weight: bold; -fx-text-fill: black;");
-			homeSubMenu.setDisable(true);
-			cartSubMenu.setStyle("-fx-font-weight: 100");
-			cartSubMenu.setOnAction(e->{
-				RouteManager.navigate("cart");
-			});
-		} else if (RouteManager.getCurrentRoute().equals("cart")) {
-			cartSubMenu.setStyle("-fx-font-weight: bold; -fx-text-fill: black;");
-			cartSubMenu.setDisable(true);
-			homeSubMenu.setStyle("-fx-font-weight: 100");
-			homeSubMenu.setOnAction(e->{
-				RouteManager.navigate("home");
-			});
-		}
-		
-		navMenu.getItems().addAll(homeSubMenu, cartSubMenu);
-		logoutMenu.getItems().add(logoutSubMenu);		
-		menuBar.getMenus().addAll(navMenu, logoutMenu);
+	private static void renderDepartmentMenu() {
+		menuBar.getMenus().addAll(initDepartmentMenu(), initLogoutMenu());
 	}
 	
-	private static void renderAdminMenu() {
-		Menu logoutMenu = new Menu("Logout");
-		MenuItem logoutSubMenu = new MenuItem("Logout");
-		
-		logoutMenu.getItems().add(logoutSubMenu);
-		menuBar.getMenus().add(logoutMenu);
-		
-		logoutSubMenu.setOnAction(e->{
-			//do something, use loginController
-		});
+	private static void renderDepartmentHeadMenu () {
+		menuBar.getMenus().addAll(initLogoutMenu());
+	}
+	
+	private static void renderHRMenu() {
+		menuBar.getMenus().addAll(initLogoutMenu());
 	}
 	
 	private static void renderGuestMenu() {
@@ -85,23 +60,106 @@ abstract public class AppShell {
 			loginSubMenu.setStyle("-fx-font-weight: bold; -fx-text-fill: black;");
 			loginSubMenu.setDisable(true);
 			registerSubMenu.setStyle("-fx-font-weight: 100");
-			registerSubMenu.setOnAction(e->{
-				RouteManager.navigate("register");
-			});
 		} else if (RouteManager.getCurrentRoute().equals("register")) {
 			registerSubMenu.setStyle("-fx-font-weight: bold; -fx-text-fill: black;");
 			registerSubMenu.setDisable(true);
 			loginSubMenu.setStyle("-fx-font-weight: 100");
-			loginSubMenu.setOnAction(e->{
-				RouteManager.navigate("login");
-			});
 		}
-		
 		accountMenu.getItems().addAll(loginSubMenu, registerSubMenu);
-		menuBar.getMenus().add(accountMenu);
+		menuBar.getMenus().addAll(accountMenu, initExampleMenu());
+
+		registerSubMenu.setOnAction(e->{
+			RouteManager.navigate("register");
+		});
+		
+		loginSubMenu.setOnAction(e->{
+			RouteManager.navigate("login");
+		});
+		
 	}
 	
 	private static void clearMenus() {
 	    menuBar.getMenus().clear();
+	}
+	
+	private static Menu initLogoutMenu() {
+		// init
+		Menu logoutMenu = new Menu("Logout");
+		MenuItem logoutSubMenu = new MenuItem("Logout");
+		logoutMenu.getItems().add(logoutSubMenu);
+		
+		// set action
+		logoutSubMenu.setOnAction(e->{
+			Alert logoutAlert = new Alert(AlertType.INFORMATION);
+			logoutAlert.setContentText("Loging off...");
+			logoutAlert.showAndWait();
+			AuthController.logoutAccount();
+		});
+		
+		return logoutMenu;
+	}
+	
+	private static Menu initDepartmentMenu() {
+		// init
+		Menu navMenu = new Menu("Dashboard");
+		Menu logoutMenu = new Menu("Logout");
+		MenuItem logoutSubMenu = new MenuItem("Logout");
+		MenuItem homeSubMenu = new MenuItem("Home");
+		MenuItem createLeaveSubMenu = new MenuItem("Create New Leave Request");
+		MenuItem historyLeaveSubMenu = new MenuItem("Employee Leave History");
+		initLogoutMenu();
+		
+		//layout
+		if (RouteManager.getCurrentRoute().equals("home")) {
+			homeSubMenu.setStyle("-fx-font-weight: bold; -fx-text-fill: black;");
+			homeSubMenu.setDisable(true);
+			historyLeaveSubMenu.setStyle("-fx-font-weight: 100");
+		} else if (RouteManager.getCurrentRoute().equals("employee-leave-request")) {
+			createLeaveSubMenu.setStyle("-fx-font-weight: bold; -fx-text-fill: black;");
+			createLeaveSubMenu.setDisable(true);
+			homeSubMenu.setStyle("-fx-font-weight: 100");
+			historyLeaveSubMenu.setStyle("-fx-font-weight: 100");
+			historyLeaveSubMenu.setOnAction(e->{
+				RouteManager.navigate("employee-leave-history");
+			});
+		} else if (RouteManager.getCurrentRoute().equals("employee-leave-history")) {
+			historyLeaveSubMenu.setStyle("-fx-font-weight: bold; -fx-text-fill: black;");
+			historyLeaveSubMenu.setDisable(true);
+			homeSubMenu.setStyle("-fx-font-weight: 100");
+			homeSubMenu.setOnAction(e->{
+				RouteManager.navigate("home");
+			});
+			createLeaveSubMenu.setStyle("-fx-font-weight: 100");
+			createLeaveSubMenu.setOnAction(e->{
+				RouteManager.navigate("employee-leave-request");
+			});
+		}
+		navMenu.getItems().addAll(homeSubMenu, createLeaveSubMenu, historyLeaveSubMenu);
+		
+		// set action
+		homeSubMenu.setOnAction(e->{
+			RouteManager.navigate("home");
+		});
+		createLeaveSubMenu.setOnAction(e->{
+			RouteManager.navigate("employee-leave-request");
+		});
+		historyLeaveSubMenu.setOnAction(e->{
+			RouteManager.navigate("employee-leave-history");
+		});
+		
+		return navMenu;
+	}
+	
+	private static Menu initExampleMenu() {
+		Menu exampleMenu = new Menu("ExampleWorkflows");
+		MenuItem homeSubMenu = new MenuItem("Go To Home");
+		
+		exampleMenu.getItems().add(homeSubMenu);
+		
+		homeSubMenu.setOnAction(e->{
+			RouteManager.navigate("example");
+		});
+		
+		return exampleMenu;
 	}
 }
